@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fallout: Пловген</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Courier New", monospace;
+      background-color: #1e1a16;
+      color: #f5deb3;
+      background-image: url('images/interface/bg_pattern.jpg');
+      background-size: cover;
+    }
+    .scene {
+      display: none;
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+      background: rgba(20, 15, 10, 0.85);
+      border: 4px double #c69c6d;
+      border-radius: 20px;
+      box-shadow: 0 0 30px #000;
+    }
+    .scene.active {
+      display: block;
+    }
+    .illustration {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      border: 2px solid #e5c185;
+    }
+    .choices button {
+      display: block;
+      margin: 1rem 0;
+      padding: 0.5rem 1rem;
+      background: #4a3822;
+      border: 2px solid #a67845;
+      color: #f3e2c7;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .choices button:hover {
+      background: #61452c;
+    }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <script>
+    // Сцены и логика вставлены вручную из Canvas (частично показано выше)
+    const scenes = [
+              {
+        id: 0,
+        image: 'images/scene_0_intro.png',
+        text: 'Год 2278. После Вкусовой Войны человечество раскололось на кланы, поклоняющиеся различным рецептам. Из Убежища №88 выходит герой, вооружённый поварёшкой и мечтой сварить Плов Единства.',
+        choices: [{ text: 'Начать своё приключение', next: 1 }]
+      },
+      {
+        id: 1,
+        image: 'images/Vault 88 Entrance in Sandstorm.png',
+        text: 'Ты стоишь в выходном шлюзе. За спиной — тепло кухни, впереди — песчаная буря. В руках — карта ингредиентов и армейский котелок.',
+        choices: [
+          { text: 'Заглянуть в подвал Убежища', next: 2 },
+          { text: 'Проверить радиостанцию', next: 3 },
+          { text: 'Выйти в Пустошь', next: 4 }
+        ]
+      },
+      {
+        id: 2,
+        image: 'images/Desolate Survival at Bunker Door.png',
+        text: 'В подвале осталась лишь банка перца и ящик «Barbaris HQ». Вдруг с потолка падает мина с чили. Ты чудом успеваешь увернуться.',
+        choices: [{ text: 'Забрать запасы и выйти', next: 4 }]
+      },
+      {
+        id: 3,
+        image: 'images/Lone Radio Operator in the Wasteland.png',
+        text: 'Радиостанция ловит сигнал с координатами: кто-то зовёт на помощь из Чорсу. Но сигнал обрывается.',
+        choices: [{ text: 'Следовать по координатам', next: 5 }]
+      },
+      {
+        id: 4,
+        image: 'images/Surviving the Storm Outside the Vault.png',
+        text: 'Ты делаешь шаг в Пустошь. Ветер воет, но в дали виднеется свет...',
+        choices: [{ text: 'Следовать к свету', next: 5 }]
+      },
+      {
+        id: 5,
+        image: 'images/Ruins of Chorsu at Twilight.png',
+        text: 'Ты подходишь к руинам Чорсу. Торговцы ведут себя настороженно. В воздухе пахнет зирой... и опасностью.',
+        choices: [
+          { text: 'Осмотреть базар', next: 6 },
+          { text: 'Искать того, кто звал по радио', next: 7 }
+        ]
+      },
+      {
+        id: 6,
+        image: 'images/Mysterious Milieu in Foggy Market.png',
+        text: 'На прилавке ты находишь банку с надписью «Слёзы Хивы». Продавец в маске кивает тебе, но молчит.',
+        choices: [
+          { text: 'Купить банку', next: 8 },
+          { text: 'Пойти дальше', next: 7 }
+        ]
+      },
+      {
+        id: 7,
+        image: 'images/Dusk Confrontation at Zirych Tavern.png',
+        text: 'Ты находишь старика с радиопередатчиком. Это Зирыч — хранитель рецептов. Он предлагает сделку: ты решаешь загадку — он открывает путь к Самарканду.',
+        choices: [
+          { text: 'Принять вызов', next: 9 },
+          { text: 'Отказаться и уйти', next: 10 }
+        ]
+      },
+      {
+        id: 8,
+        image: 'images/Spices of the Last Gathering.png',
+        text: 'Ты получаешь странный ингредиент. Он мерцает. Похоже, это один из ключей к Плову Единства.',
+        choices: [{ text: 'Вернуться к старцу', next: 7 }]
+      },
+      {
+        id: 9,
+        image: "images/Journey Through Samarkand\'s Ruins.png",
+        text: 'Ты решаешь загадку. Старец улыбается и вручает тебе пропуск: путь на юг — открыт. Впереди Самарканд.',
+        choices: [{ text: 'Продолжить путь', next: 11 }]
+      },
+      {
+        id: 10,
+        image: 'images/Solitary Figure in Foggy Wasteland.png',
+        text: 'Ты уходишь один в ночь. Путь будет долгим и трудным — но, возможно, где-то там тоже есть плов.',
+        choices: []
+      },
+
+      {
+        id: 11,
+        image: 'images/Warrior-Chef in Twilight Ruins.png',
+        text: 'Ты входишь в руины Самарканда. Среди пепла и древних ковров тебя встречает Зирвакус — полу-человек, полу-шеф.',
+        choices: [
+          { text: 'Принять бой и доказать достоинство', next: 12 }
+        ]
+      },
+      {
+        id: 12,
+        image: 'images/Master of the Cauldron.png',
+        text: 'Сражение окончено. Зирвакус повержен. Он протягивает тебе золотую лопатку — ключ к казану Единства.',
+        choices: [
+          { text: 'Принять реликвию и продолжить путь', next: 13 }
+        ]
+      },
+      {
+        id: 13,
+        image: 'images/Post-Apocalyptic Meal Prep in Tower.png',
+        text: 'Ты приближаешься к Башне Казана. Вокруг собираются разные племена. Всё готово для великого ритуала.',
+        choices: [
+          { text: 'Провести ритуал Плова Единства', next: 14 }
+        ]
+      },
+      {
+        id: 14,
+        image: 'images/Post-Apocalyptic Gathering Around Cauldron.png',
+        text: 'Ты кладёшь последний ингредиент. Казан поёт. Над Пустошью впервые за столетие слышен смех. Плов Единства сварен.',
+        choices: [
+          { text: 'Финал: Единство достигнуто', next: 15 }
+        ]
+      },
+      {
+        id: 15,
+        image: 'images/Unity in a Warming Chamber.png',
+        text: 'Племена объединяются. Ты теперь не просто путешественник — ты Шеф Мира. Аромат зиры уносится ветром сквозь руины. Конец.',
+        choices: []
+      },
+      {
+        id: 16,
+        image: 'images/Tunnels of Tashkent Discovery.png',
+        text: 'В руинах метро Ташкента ты находишь древние рецепты, выцарапанные на кафеле. Внезапно за спиной слышится шаги...',
+        choices: [
+          { text: 'Обернуться', next: 17 },
+          { text: 'Спрятаться в нише', next: 18 }
+        ]
+      },
+      {
+        id: 17,
+        image: 'images/A Blaze in the Night.png',
+        text: 'Ты сталкиваешься с мародёрами. Начинается бой в свете костра. Спасёт ли тебя казан, укреплённый бронелепёшками?',
+        choices: [
+          { text: 'Отбиться и скрыться', next: 19 }
+        ]
+      },
+      {
+        id: 18,
+        image: 'images/Lone Explorer Facing the Storm.png',
+        text: 'Ты пережидаешь опасность в темноте. Вспоминаешь наставления старца: «Плов — это равновесие. Как и выживание.»',
+        choices: [
+          { text: 'Вернуться на поверхность', next: 19 }
+        ]
+      },
+      {
+        id: 19,
+        image: 'images/Vault Dweller in a Deserted City.png',
+        text: 'Ты выходишь в разрушенный квартал. Ни души. Только ветер, пыль и запах давно забытых специй.',
+        choices: [
+          { text: 'Продолжить путь', next: 20 }
+        ]
+      },
+      {
+        id: 20,
+        image: 'images/Vault Dweller Confronts Hooded Figures.png',
+        text: 'На твоём пути — орден в капюшонах. Они называют себя Стражами Зиры. Испытание неизбежно.',
+        choices: [
+          { text: 'Пройти их испытание', next: 21 }
+        ]
+      },
+      {
+        id: 21,
+        image: 'images/Vault Dweller and Cultists in Plaza.png',
+        text: 'Ты должен сварить плов в условиях дефицита: ни риса, ни моркови. Лишь кизяк и барбарис. Смог бы ты?',
+        choices: [
+          { text: 'Да, я готов к вызову', next: 22 }
+        ]
+      },
+      {
+        id: 22,
+        image: 'images/Vault Dweller and the Golden Offering.png',
+        text: 'Они вручают тебе Золотую Зиру. Ты доказал преданность делу Казана.',
+        choices: [
+          { text: 'Продолжить путь к Башне Казана', next: 13 }
+        ]
+      },
+
+      // Дополнительные сцены с оставшимися изображениями
+      {
+        id: 23,
+        image: 'images/Post-apocalyptic Plov Adventures.png',
+        text: 'Ты останавливаешься у старого билборда. На нём — faded постер с надписью: "Плов спасёт мир". Слоган из прошлого, но всё ещё актуален.',
+        choices: [
+          { text: 'Двигаться дальше', next: 24 }
+        ]
+      },
+      {
+        id: 24,
+        image: 'images/Elderly Man with Shorpo at Twilight.png',
+        text: 'На пути ты встречаешь старца, разливающего шорпо у костра. Он предлагает миску в обмен на рассказ.',
+        choices: [
+          { text: 'Поделиться историей', next: 25 }
+        ]
+      },
+      {
+        id: 25,
+        image: 'images/Elderly Man with Ladle and Turban.png',
+        text: 'Он слушает внимательно и, кивнув, протягивает тебе амулет с символом моркови. «Ты готов, дитя плова», — произносит он.',
+        choices: [
+          { text: 'Поблагодарить и уйти', next: 26 }
+        ]
+      },
+      {
+        id: 26,
+        image: 'images/Ruins of an Epic Encounter.png',
+        text: 'Ты проходишь через поле былой битвы. Здесь, по легенде, кипел Казан Судного Дня — в нём перемешивали судьбы целых кланов.',
+        choices: [
+          { text: 'Отдать дань памяти', next: 27 }
+        ]
+      },
+      {
+        id: 27,
+        image: 'images/Post-Apocalyptic Encounter in Deserted Ruins.png',
+        text: 'Ты слышишь шорох в руинах. Кто-то наблюдает за тобой. Мутант-повар? Или просто вор, охотящийся за специями?',
+        choices: [
+          { text: 'Приготовиться к защите', next: 28 },
+          { text: 'Спрятаться', next: 29 }
+        ]
+      },
+      {
+        id: 28,
+        image: 'images/Lone Sentinel in a Ruined City.png',
+        text: 'Ты сталкиваешься с тенью. Это был всего лишь пёс, охраняющий заброшенную чайхану. Он уходит, не причинив вреда.',
+        choices: [
+          { text: 'Продолжить путь', next: 30 }
+        ]
+      },
+      {
+        id: 29,
+        image: 'images/Reflections in an Abandoned Marketplace.png',
+        text: 'Ты скрываешься среди разбитых прилавков. На старом зеркале ты видишь своё отражение: бородатого странника, ведомого запахом...',
+        choices: [
+          { text: 'Осознать путь', next: 30 }
+        ]
+      },
+      {
+        id: 30,
+        image: 'images/Vault Dweller in Ancient Courtyard.png',
+        text: 'Ты входишь во двор, где когда-то проходил Великий Кулинарный Совет. Здесь витает дух гармонии и остроты.',
+        choices: [
+          { text: 'Почтить память', next: 31 }
+        ]
+      },
+      {
+        id: 31,
+        image: 'images/Gathering in a Fallen Hall.png',
+        text: 'Остатки племён собираются в разрушенном зале. Кто-то приносит чеснок, кто-то — масло. Начинается великая готовка.',
+        choices: [
+          { text: 'Присоединиться к подготовке ритуала', next: 13 }
+        ]
+      }
+    ];
+
+    function renderScene(id) {
+  const game = document.getElementById('game');
+  game.innerHTML = '';
+
+  const scene = scenes.find(s => s.id === id);
+  if (!scene) return;
+
+  const container = document.createElement('div');
+  container.className = 'scene active';
+
+  const img = document.createElement('img');
+  img.src = scene.image;
+  img.alt = 'scene';
+  img.className = 'illustration';
+  container.appendChild(img);
+
+  const text = document.createElement('p');
+  text.innerText = scene.text;
+  container.appendChild(text);
+
+  const choices = document.createElement('div');
+  choices.className = 'choices';
+  scene.choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.innerText = choice.text;
+    btn.onclick = () => renderScene(choice.next);
+    choices.appendChild(btn);
+  });
+
+  container.appendChild(choices);
+  game.appendChild(container);
+}
+
+renderScene(0);
+
+  </script>
+</body>
+</html>
