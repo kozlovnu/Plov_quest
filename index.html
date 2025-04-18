@@ -74,13 +74,19 @@
         id: 2,
         image: 'images/Desolate Survival at Bunker Door.png',
         text: 'В подвале осталась лишь банка перца и ящик «Barbaris HQ». Вдруг с потолка падает мина с чили. Ты чудом успеваешь увернуться.',
-        choices: [{ text: 'Забрать запасы и выйти', next: 4 }]
+        choices: [
+          { text: 'Забрать запасы и выйти', next: 4 },
+          { text: 'Вернуться назад', next: 1 }
+        ]
       },
       {
         id: 3,
         image: 'images/Lone Radio Operator in the Wasteland.png',
         text: 'Радиостанция ловит сигнал с координатами: кто-то зовёт на помощь из Чорсу. Но сигнал обрывается.',
-        choices: [{ text: 'Следовать по координатам', next: 5 }]
+        choices: [
+          { text: 'Следовать по координатам', next: 5 },
+          { text: 'Вернуться назад', next: 1 }
+        ]
       },
       {
         id: 4,
